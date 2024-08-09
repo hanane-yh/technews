@@ -82,3 +82,10 @@ class NewsAPITestCase(TestCase):
     def test_get_nonexistent_news(self):
         response = self.client.get(reverse('get-news', args=[999]))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_news_by_nonexistent_tag(self):
+        response = self.client.get(reverse('list-news'), {'tag': 'nonexistent'})
+        # news = News.objects.filter(tags__label='nonexistent')
+        # serializer = NewsSerializer(news, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
