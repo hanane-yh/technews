@@ -9,7 +9,7 @@ from tags.models import Tag
 import requests
 
 
-def extract_links(from_page: int, to_page: int) -> list[str]:
+def extract_page_links(from_page: int, to_page: int) -> list[str]:
     """
      Extracts a list of article links from the specified pages of the website.
 
@@ -59,31 +59,32 @@ def extract_content(url: str) -> tuple[str, str, str, list[str]] | None:
             Returns `None` if the HTTP response status code is not 200 (indicating a failed request).
     """
     response = requests.get(url)
-    content = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, 'html.parser')
     if response.status_code != 200:
+        print(f"request failed for {url}")
         return
 
     # extract the post's tags
-    labels = content.find_all(attrs={'class': 'typography__StyledDynamicTypographyComponent-t787b7-0 cHbulB'})
+    labels = soup.find_all(attrs={'class': 'typography__StyledDynamicTypographyComponent-t787b7-0 cHbulB'})
 
     # extract the post's title
-    title = content.find('h1').text if content.find('h1') is not None else "default title"
+    title = soup.find('h1').text if soup.find('h1') is not None else "default title"
 
     # extract the post's author
-    found_content = content.find(class_="typography__StyledDynamicTypographyComponent-t787b7-0 kZjgvK")
-    if found_content is None:
+    content = soup.find(class_="typography__StyledDynamicTypographyComponent-t787b7-0 kZjgvK")
+    if content is None:
         source = ""
     else:
-        source = found_content.text
+        source = content.text
 
     # extract the post's body
-    paragraphs = content.find_all(attrs={'class': 'ParagraphElement__ParagraphBase-sc-1soo3i3-0'})
+    paragraphs = soup.find_all(attrs={'class': 'ParagraphElement__ParagraphBase-sc-1soo3i3-0'})
     text = "\n".join(f"{p.text}" for p in paragraphs)
 
     return title, text, source, labels
 
 
-def create_single_post(title: str, text: str, source: str, labels: list[str]) -> None:
+def create_post(title: str, text: str, source: str, labels: list[str]) -> None:
     """
     Creates a news post with the given title, content, and source, and associates it with tags.
 
@@ -107,10 +108,10 @@ def create_single_post(title: str, text: str, source: str, labels: list[str]) ->
         source=source,
     )
 
-    [news.tags.add(tag) for tag in tags]
+    news.tags.set(tags)
 
 
-def create_multiple_posts(urls: list[str]) -> None:
+def create_posts(urls: list[str]) -> None:
     """
     Creates multiple news posts in the database by extracting information from a list of URLs.
 
@@ -121,4 +122,8 @@ def create_multiple_posts(urls: list[str]) -> None:
         None
     """
     for url in urls:
-        create_single_post(*extract_content(url))
+        post_content = extract_content(url)
+        if post_content is None:
+            print(f"no content found for {url}")
+        else:
+            create_post(*post_content)
