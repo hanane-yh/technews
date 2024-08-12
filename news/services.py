@@ -2,15 +2,11 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from news.models import News
 from tags.models import Tag
 import requests
-import environ
-import os
-
-env = environ.Env()
-environ.Env.read_env(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 def extract_links(from_page: int, to_page: int) -> list[str]:
@@ -25,9 +21,10 @@ def extract_links(from_page: int, to_page: int) -> list[str]:
          list[str]: A list of the article links.
      """
     chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument("--headless")
-    service = Service(env('CHROMEDRIVER_PATH'))
-    wd = webdriver.Chrome(service=service, options=chrome_options)
+    wd = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
