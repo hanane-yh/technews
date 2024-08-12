@@ -2,24 +2,18 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.remote.webelement import WebElement
 from bs4 import BeautifulSoup
+from news.models import News
+from tags.models import Tag
 import requests
-import django
 import environ
 import os
 
 env = environ.Env()
 environ.Env.read_env(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'technews.settings')
-django.setup()
 
-from news.models import News
-from tags.models import Tag
-
-
-def extract_links(from_page: int, to_page: int) -> list[WebElement]:
+def extract_links(from_page: int, to_page: int) -> list[str]:
     """
      Extracts a list of article links from the specified pages of the website.
 
@@ -28,65 +22,95 @@ def extract_links(from_page: int, to_page: int) -> list[WebElement]:
          to_page (int): The ending page number.
 
      Returns:
-         list[WebElement]: A list of web elements representing the article links.
+         list[str]: A list of the article links.
      """
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     service = Service(env('CHROMEDRIVER_PATH'))
-    wd = webdriver.Chrome(service=service)
+    wd = webdriver.Chrome(service=service, options=chrome_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
-            url = f"https://www.zoomit.ir/archive/?sort=Newest&publishPeriod=All&readingTimeRange=All&pageNumber={from_page+i}"
+            url = f"https://www.zoomit.ir/archive/?sort=Newest&publishPeriod=All&readingTimeRange=All&pageNumber={from_page + i}"
             wd.get(url)
             wd.implicitly_wait(5)
-            post_links = wd.find_elements(By.XPATH,
-                                          "//a[contains(@class, 'BrowseArticleListItemDesktop__WrapperLink')]")
-            for i in range(len(post_links)):
-                post_links[i] = post_links[i].get_attribute('href')
-            links.extend(post_links)
+            link_elements = wd.find_elements(By.XPATH,
+                                             "//a[contains(@class, 'BrowseArticleListItemDesktop__WrapperLink')]")
+            extracted_links = [link.get_attribute('href') for link in link_elements]
+            links.extend(extracted_links)
     finally:
         wd.quit()
 
     return links
 
 
-def create_single_post(url: str) -> None:
+def extract_content(url: str) -> tuple[str, str, str, list[str]] | None:
     """
-    Creates a single news post in the database by extracting the necessary information from the given URL.
+    Extracts content from a given URL, including the title, text, source, and labels of a post.
 
     Args:
-        url (str): The URL of the news article to extract and save.
+        url (str): The URL of the web page from which to extract content.
+
+    Returns:
+        tuple[str, str, str, list[str]] | None:
+            A tuple containing:
+            - title (str): The title of the post. Defaults to "default title" if not found.
+            - text (str): The main content of the post, concatenated from multiple paragraphs.
+            - source (str): The source or author of the post. Returns an empty string if not found.
+            - labels (list[str]): A list of strings representing the tags associated with the post.
+
+            Returns `None` if the HTTP response status code is not 200 (indicating a failed request).
     """
     response = requests.get(url)
-    tags = []
     content = BeautifulSoup(response.text, 'html.parser')
-    if response.status_code == 200:
-        labels = content.find_all(attrs={'class': 'typography__StyledDynamicTypographyComponent-t787b7-0 cHbulB'})
+    if response.status_code != 200:
+        return
 
-        # extract the post's tags
-        for label in labels:
-            tag, created = Tag.objects.get_or_create(label=label.text)
-            tags.append(tag)
+    # extract the post's tags
+    labels = content.find_all(attrs={'class': 'typography__StyledDynamicTypographyComponent-t787b7-0 cHbulB'})
 
-        # extract the post's title
-        title = content.find('h1')
+    # extract the post's title
+    title = content.find('h1').text if content.find('h1') is not None else "default title"
 
-        # extract the post's author
-        source = content.find(class_="typography__StyledDynamicTypographyComponent-t787b7-0 kZjgvK").text
+    # extract the post's author
+    found_content = content.find(class_="typography__StyledDynamicTypographyComponent-t787b7-0 kZjgvK")
+    if found_content is None:
+        source = ""
+    else:
+        source = found_content.text
 
-        # extract the post's body
-        paragraphs = content.find_all(attrs={'class': 'ParagraphElement__ParagraphBase-sc-1soo3i3-0'})
-        text = "\n".join(f"{p.text}" for p in paragraphs)
-        print(text)
+    # extract the post's body
+    paragraphs = content.find_all(attrs={'class': 'ParagraphElement__ParagraphBase-sc-1soo3i3-0'})
+    text = "\n".join(f"{p.text}" for p in paragraphs)
 
-        news = News.objects.create(
-            title=title,
-            content=text,
-            source=source,
-        )
+    return title, text, source, labels
 
-        [news.tags.add(tag) for tag in tags]
+
+def create_single_post(title: str, text: str, source: str, labels: list[str]) -> None:
+    """
+    Creates a news post with the given title, content, and source, and associates it with tags.
+
+    Args:
+        title (str): The title of the news post.
+        text (str): The main content or body of the news post.
+        source (str): The source of the news content.
+        labels (list[str]): A list of labels (tags) to be associated with the news post.
+
+    Returns:
+        None
+    """
+    tags = []
+    for label in labels:
+        tag, created = Tag.objects.get_or_create(label=label.text)
+        tags.append(tag)
+
+    news = News.objects.create(
+        title=title,
+        content=text,
+        source=source,
+    )
+
+    [news.tags.add(tag) for tag in tags]
 
 
 def create_multiple_posts(urls: list[str]) -> None:
@@ -95,6 +119,9 @@ def create_multiple_posts(urls: list[str]) -> None:
 
     Args:
         urls (list[str]): A list of URLs to process and create news posts from.
+
+    Returns:
+        None
     """
     for url in urls:
-        create_single_post(url)
+        create_single_post(*extract_content(url))

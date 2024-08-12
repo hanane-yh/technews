@@ -18,9 +18,11 @@ def get_routes(request):
 
 @api_view(['GET'])
 def list_news(request):
-    tag = request.query_params.get('tag', None)
-    if tag:
-        news = News.objects.filter(tags__label=tag)
+    tags = request.query_params.getlist('tag', None)
+    if tags:
+        news = News.objects.all()
+        for tag in tags:
+            news = news.filter(tags__label=tag)
     else:
         news = News.objects.all()
 
