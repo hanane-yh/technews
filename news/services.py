@@ -35,6 +35,8 @@ def extract_page_links(from_page: int, to_page: int) -> list[str]:
                                              "//a[contains(@class, 'BrowseArticleListItemDesktop__WrapperLink')]")
             extracted_links = [link.get_attribute('href') for link in link_elements]
             links.extend(extracted_links)
+    except Exception as e:
+        print(f"Error happened while extracting links. error message: {e}")
     finally:
         wd.quit()
 
