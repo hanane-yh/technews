@@ -5,7 +5,7 @@ from tags.models import Tag
 
 
 class News(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, unique=True)
     content = models.TextField()
     source = models.CharField(max_length=255)
     tags = models.ManyToManyField(Tag, related_name='news')

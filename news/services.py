@@ -1,14 +1,14 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 from news.models import News
 from tags.models import Tag
 import requests
+import environ
 
 
+env = environ.Env()
 def extract_page_links(from_page: int, to_page: int) -> list[str]:
     """
      Extracts a list of article links from the specified pages of the website.
@@ -24,7 +24,7 @@ def extract_page_links(from_page: int, to_page: int) -> list[str]:
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument("--headless")
-    wd = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    wd = webdriver.Remote(command_executor=env('HUB_URL'), options=chrome_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
@@ -104,7 +104,7 @@ def create_post(title: str, text: str, source: str, labels: list[str]) -> None:
         tag, created = Tag.objects.get_or_create(label=label.text)
         tags.append(tag)
 
-    news = News.objects.create(
+    news, created = News.objects.get_or_create(
         title=title,
         content=text,
         source=source,

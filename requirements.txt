@@ -1,7 +1,10 @@
 beautifulsoup4==4.12.3
-Django==5.1
+Django==5.0
 django-environ==0.11.2
 djangorestframework==3.15.2
 requests==2.32.3
 selenium==4.23.1
 webdriver-manager==4.0.2
+celery~=5.4.0
+django-celery-beat==2.6.0
+psycopg2-binary==2.9.9
