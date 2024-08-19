@@ -57,7 +57,7 @@ services:
       - technews_network
 
   selenium:
-    image: selenium/standalone-firefox:latest
+    image: selenium/standalone-chrome:latest
     shm_size: '2gb'
     ports:
       - "4444:4444"
