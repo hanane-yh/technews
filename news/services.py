@@ -24,21 +24,21 @@ def extract_page_links(from_page: int, to_page: int) -> list[str]:
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument("--headless")
-    wd = webdriver.Remote(command_executor=env('HUB_URL'), options=chrome_options)
+    chrome_wd = webdriver.Remote(command_executor=env('HUB_URL'), options=chrome_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
             url = f"https://www.zoomit.ir/archive/?sort=Newest&publishPeriod=All&readingTimeRange=All&pageNumber={from_page + i}"
-            wd.get(url)
-            wd.implicitly_wait(5)
-            link_elements = wd.find_elements(By.XPATH,
+            chrome_wd.get(url)
+            chrome_wd.implicitly_wait(5)
+            link_elements = chrome_wd.find_elements(By.XPATH,
                                              "//a[contains(@class, 'BrowseArticleListItemDesktop__WrapperLink')]")
             extracted_links = [link.get_attribute('href') for link in link_elements]
             links.extend(extracted_links)
     except Exception as e:
         print(f"Error happened while extracting links. error message: {e}")
     finally:
-        wd.quit()
+        chrome_wd.quit()
 
     return links
 
