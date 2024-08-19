@@ -151,7 +151,7 @@ CELERY_RESULT_BACKEND = env('RESULT_BACKEND')
 CELERY_BEAT_SCHEDULE = {
     'update-posts-every-5-minutes': {
         'task': 'news.tasks.update_posts',
-        'schedule': 60.0,
+        'schedule': 300.0,
         'args': (1, 1),
     },
 }
