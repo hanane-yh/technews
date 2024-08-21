@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 from news.models import News
 from tags.models import Tag
@@ -20,11 +20,11 @@ def extract_page_links(from_page: int, to_page: int) -> list[str]:
      Returns:
          list[str]: A list of the article links.
      """
-    chrome_options = Options()
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument("--headless")
-    chrome_wd = webdriver.Remote(command_executor=env('HUB_URL'), options=chrome_options)
+    firefox_options = Options()
+    firefox_options.add_argument('--no-sandbox')
+    firefox_options.add_argument('--disable-dev-shm-usage')
+    firefox_options.add_argument("--headless")
+    chrome_wd = webdriver.Remote(command_executor=env('HUB_URL'), options=firefox_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
@@ -86,7 +86,7 @@ def extract_content(url: str) -> tuple[str, str, str, list[str]] | None:
     return title, text, source, labels
 
 
-def create_post(title: str, text: str, source: str, labels: list[str]) -> None:
+def create_post(title: str, text: str, source: str, labels: list[str], url: str) -> None:
     """
     Creates a news post with the given title, content, and source, and associates it with tags.
 
@@ -108,6 +108,7 @@ def create_post(title: str, text: str, source: str, labels: list[str]) -> None:
         title=title,
         content=text,
         source=source,
+        url=url,
     )
 
     news.tags.set(tags)
@@ -128,4 +129,4 @@ def create_posts(urls: list[str]) -> None:
         if post_content is None:
             print(f"no content found for {url}")
         else:
-            create_post(*post_content)
+            create_post(*post_content, url=url)
