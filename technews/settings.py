@@ -32,7 +32,7 @@ SECRET_KEY = env('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['technews.darkube.app']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'django_celery_beat',
     'tags',
     'news',
@@ -156,4 +157,15 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+# REST_FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'TechNews API',
+    'VERSION': '1.0.0',
+}
 
