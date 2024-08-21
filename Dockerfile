@@ -1,4 +1,4 @@
-FROM hub.hamdocker.ir/python:3.10-slim
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1

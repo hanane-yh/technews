@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-
+from rest_framework.pagination import PageNumberPagination
 from news.models import News
 from .serializers import NewsSerializer
 
@@ -43,15 +43,17 @@ class ListNewsView(APIView):
     serializer_class = NewsSerializer
     def get(self, request):
         tags = request.query_params.getlist('tag', None)
+        news = News.objects.all().order_by('id')
+
         if tags:
-            news = News.objects.all()
             for tag in tags:
                 news = news.filter(tags__label=tag)
-        else:
-            news = News.objects.all()
 
-        serializer = NewsSerializer(news, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = PageNumberPagination()
+        paginated_news = paginator.paginate_queryset(news, request)
+
+        serializer = NewsSerializer(paginated_news, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class GetNewsView(APIView):
