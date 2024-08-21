@@ -15,11 +15,11 @@ class NewsAPITestCase(TestCase):
         self.tag1 = Tag.objects.create(label='tag1')
         self.tag2 = Tag.objects.create(label='tag2')
 
-        # Create sample news articles
         self.news1 = News.objects.create(
             title='News 1',
             content='Content 1',
             source='Source 1',
+            url='http://example.com/news1'
         )
         self.news1.tags.add(self.tag1)
 
@@ -27,6 +27,7 @@ class NewsAPITestCase(TestCase):
             title='News 2',
             content='Content 2',
             source='Source 2',
+            url='http://example.com/news2'
         )
         self.news2.tags.add(self.tag2)
 
@@ -34,6 +35,7 @@ class NewsAPITestCase(TestCase):
             title='News 3',
             content='Content 3',
             source='Source 3',
+            url='http://example.com/news3'
         )
         self.news3.tags.add(self.tag1, self.tag2)
 
@@ -68,13 +70,13 @@ class NewsAPITestCase(TestCase):
 
     def test_get_specific_news(self):
         response = self.client.get(reverse('get-news', args=[self.news1.id]))
-        news = get_object_or_404(News, id=self.news1.id)
+        news = News.objects.get(id=self.news1.id)
         serializer = NewsSerializer(news)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
         response = self.client.get(reverse('get-news', args=[self.news2.id]))
-        news = get_object_or_404(News, id=self.news2.id)
+        news = News.objects.get(id=self.news2.id)
         serializer = NewsSerializer(news)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
@@ -85,7 +87,10 @@ class NewsAPITestCase(TestCase):
 
     def test_list_news_by_nonexistent_tag(self):
         response = self.client.get(reverse('list-news'), {'tag': 'nonexistent'})
-        # news = News.objects.filter(tags__label='nonexistent')
-        # serializer = NewsSerializer(news, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+    def test_news_count(self):
+        response = self.client.get(reverse('news_count'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'total_news_sscraped': 3})
