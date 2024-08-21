@@ -1,14 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
-import environ
 
-env = environ.Env()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'technews.settings')
 
 app = Celery(
     'technews',
-    broker=f"amqp://{env('BROKER_USER')}:{env('BROKER_PASSWORD')}@{env('BROKER_IP')}:{env('BROKER_PORT')}/",
+    broker=f"amqp://{os.getenv('BROKER_USER')}:{os.getenv('BROKER_PASSWORD')}@{os.getenv('BROKER_IP')}:{os.getenv('BROKER_PORT')}/",
     backend='rpc://'
 )
 
