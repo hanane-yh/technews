@@ -1,3 +1,4 @@
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -8,6 +9,7 @@ import requests
 import environ
 
 
+logging.basicConfig(level=logging.INFO)
 env = environ.Env()
 def extract_page_links(from_page: int, to_page: int) -> list[str]:
     """
@@ -63,8 +65,8 @@ def extract_content(url: str) -> tuple[str, str, str, list[str]] | None:
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     if response.status_code != 200:
-        print(f"request failed for {url}")
-        return
+        logging.warning(f"Request failed for {url}")
+        return None
 
     # extract the post's tags
     labels = soup.find_all(attrs={'class': 'typography__StyledDynamicTypographyComponent-t787b7-0 cHbulB'})
@@ -99,6 +101,10 @@ def create_post(title: str, text: str, source: str, labels: list[str], url: str)
     Returns:
         None
     """
+    if not url:
+        logging.warning(f"Cannot create news post with title '{title}' because URL is missing.")
+        return
+
     tags = []
     for label in labels:
         tag, created = Tag.objects.get_or_create(label=label.text)
@@ -124,9 +130,17 @@ def create_posts(urls: list[str]) -> None:
     Returns:
         None
     """
+    if not urls:
+        logging.info("No URLs to process.")
+        return
+
     for url in urls:
+        if not url:
+            logging.warning("Invalid URL encountered, skipping.")
+            continue
+
         post_content = extract_content(url)
         if post_content is None:
-            print(f"no content found for {url}")
+            logging.warning(f"No content found for {url}")
         else:
             create_post(*post_content, url=url)
