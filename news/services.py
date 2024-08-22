@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from news.models import News
 from tags.models import Tag
@@ -20,11 +20,11 @@ def extract_page_links(from_page: int, to_page: int) -> list[str]:
      Returns:
          list[str]: A list of the article links.
      """
-    firefox_options = Options()
-    firefox_options.add_argument('--no-sandbox')
-    firefox_options.add_argument('--disable-dev-shm-usage')
-    firefox_options.add_argument("--headless")
-    chrome_wd = webdriver.Remote(command_executor=env('HUB_URL'), options=firefox_options)
+    chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument("--headless")
+    chrome_wd = webdriver.Remote(command_executor=env('HUB_URL'), options=chrome_options)
     links = []
     try:
         for i in range(to_page - from_page + 1):
