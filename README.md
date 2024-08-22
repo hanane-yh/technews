@@ -17,5 +17,5 @@ TechNews is a Python-based project that scrapes the Zoomit website's article arc
 2. Navigate to the project directory.
 3. Build and start the  Docker containers:
    ```bash
-   docker-compose up --build
+   docker compose up -d --build
     ```
