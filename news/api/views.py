@@ -21,7 +21,6 @@ class GetRoutesView(APIView):
             'GET /api',
             'GET /api/news',
             'GET /api/news/:id',
-            'GET /api/news/news-count'
         ]
         return Response(routes)
 
@@ -74,19 +73,3 @@ class GetNewsView(APIView):
         news = get_object_or_404(News, pk=pk)
         serializer = NewsSerializer(news, many=False)
         return Response(serializer.data)
-
-
-class NewsCountView(APIView):
-    """
-    Retrieves the total count of news articles in the database.
-
-    This view returns the total number of news articles that have been
-    scraped and stored in the database.
-
-    Returns:
-        Response: A dictionary containing the total count of news articles.
-    """
-    serializer_class = NewsSerializer
-    def get(self, request):
-        count = News.objects.count()
-        return Response({'total_news_scraped': count})

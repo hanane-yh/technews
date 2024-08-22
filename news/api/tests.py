@@ -109,8 +109,3 @@ class NewsAPITestCase(TestCase):
         response = self.client.get(reverse('list-news'), {'tag': 'nonexistent'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'], [])
-
-    def test_news_count(self):
-        response = self.client.get(reverse('news-count'))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {'total_news_scraped': 3})
